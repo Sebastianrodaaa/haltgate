@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>haltgate · loop gate dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--bg:#050505;--panel:#0d0d0d;--line:#1f1f1f;--dim:#5c5c5c;--mid:#9a9a9a;--fg:#e8e8e8;--hi:#ffffff;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.4 var(--mono)}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+aside{border-right:1px solid var(--line);padding:18px 16px;display:flex;flex-direction:column;gap:18px}
+.brand{font-size:18px;letter-spacing:.5px;color:var(--hi)}.brand small{display:block;color:var(--dim);font-size:10px;letter-spacing:1.5px;margin-top:4px;text-transform:uppercase}
+.sec h4{margin:0 0 8px;font-weight:400;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{flex:1;background:none;border:0;color:var(--mid);font:inherit;padding:6px 0;cursor:pointer}
+.seg button.on{background:var(--fg);color:#000}
+.kv{display:flex;justify-content:space-between;color:var(--mid);padding:3px 0;border-bottom:1px dashed #161616}.kv b{color:var(--fg);font-weight:400}
+.verdict{border:1px solid var(--fg);border-radius:8px;padding:10px;text-align:center;letter-spacing:3px;font-size:15px}
+.verdict.fail{border-style:dashed;color:var(--mid)}
+.crit{font-size:11px;color:var(--mid)}.crit div{display:flex;gap:8px;padding:2px 0}.crit i{font-style:normal;width:14px;color:var(--hi)}
+main{padding:16px;display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-content:start}
+.p{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.p h3{margin:0 0 8px;font-weight:400;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mid);display:flex;justify-content:space-between}
+.p h3 span{color:var(--dim);text-transform:none;letter-spacing:0}
+.kpi{grid-column:span 3}.kpi .n{font-size:30px;color:var(--hi);letter-spacing:-1px}.kpi .s{color:var(--dim);font-size:11px}
+.c8{grid-column:span 8}.c4{grid-column:span 4}.c6{grid-column:span 6}.c12{grid-column:span 12}.c5{grid-column:span 5}.c7{grid-column:span 7}
+svg{display:block;width:100%;height:auto}svg text{fill:var(--dim);font:10px var(--mono)}
+.ax{stroke:#262626}.grid{stroke:#151515}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:right;padding:5px 8px;border-bottom:1px solid #161616}th{color:var(--dim);font-weight:400;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+td:first-child,th:first-child{text-align:left}tr.me td{color:var(--hi)}tr.me td:first-child::before{content:"▸ "}
+.legend{display:flex;gap:14px;color:var(--mid);font-size:11px;margin-top:6px}.legend span::before{content:"";display:inline-block;width:8px;height:8px;margin-right:6px;vertical-align:middle;border:1px solid var(--fg)}
+.legend .w::before{background:var(--hi)}.legend .g::before{background:#666;border-color:#666}.legend .o::before{background:none}
+.foot{grid-column:span 12;color:var(--dim);font-size:10px;letter-spacing:.5px;padding:4px 2px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand">haltgate<small>loop gate · ltt calibrated</small></div>
+  <div class="sec"><h4>Seed</h4><div class="seg" id="seeds"></div></div>
+  <div class="sec"><h4>Run</h4><div id="run"></div></div>
+  <div class="sec"><h4>Verdict · 3 seeds pooled</h4><div id="verdict" class="verdict">…</div></div>
+  <div class="sec"><h4>Failure criteria</h4><div class="crit" id="crit"></div></div>
+  <div class="sec"><h4>Hypothesis</h4><div class="crit" id="hyp"></div></div>
+</aside>
+<main id="main">
+  <div class="p kpi"><h3>haltgate accuracy</h3><div class="n" id="k1">–</div><div class="s" id="k1s"></div></div>
+  <div class="p kpi"><h3>mean loops used</h3><div class="n" id="k2">–</div><div class="s" id="k2s"></div></div>
+  <div class="p kpi"><h3>false-halt rate on S</h3><div class="n" id="k3">–</div><div class="s" id="k3s"></div></div>
+  <div class="p kpi"><h3>wall clock / item</h3><div class="n" id="k4">–</div><div class="s" id="k4s"></div></div>
+  <div class="p c8"><h3>accuracy vs mean loops <span>test split · pareto</span></h3><div id="pareto"></div>
+    <div class="legend"><span class="w">haltgate λ sweep</span><span class="g">entropy τ sweep</span><span class="o">fixed-N</span></div></div>
+  <div class="p c4"><h3>loops used <span>per item, test</span></h3><div id="hist"></div>
+    <div class="legend"><span class="w">haltgate</span><span class="g">entropy-matched</span></div></div>
+  <div class="p c7"><h3>per-item halt timeline <span>40 real test items · ■ correct □ wrong · │ halt</span></h3><div id="timeline"></div></div>
+  <div class="p c5"><h3>hidden-state features <span>pca · item × loop</span></h3><div id="scatter"></div>
+    <div class="legend"><span class="w">continue</span><span class="g">halt</span><span class="o">escalate</span></div></div>
+  <div class="p c4"><h3>accuracy by loop <span>per task</span></h3><div id="byloop"></div><div class="legend" id="tasklegend"></div></div>
+  <div class="p c4"><h3>learn then test <span>fixed-sequence p-values</span></h3><div id="ltt"></div></div>
+  <div class="p c4"><h3>training <span>loss, deep supervision</span></h3><div id="train"></div></div>
+  <div class="p c12"><h3>arms <span>this seed · test split</span></h3><div id="arms"></div></div>
+  <div class="foot" id="foot"></div>
+</main>
+</div>
+<script>
+const $=id=>document.getElementById(id), f=(v,d=3)=>v==null?"–":(+v).toFixed(d), pct=v=>v==null?"–":(100*v).toFixed(1)+"%";
+const NS="http://www.w3.org/2000/svg";
+function svg(w,h){const s=document.createElementNS(NS,"svg");s.setAttribute("viewBox",`0 0 ${w} ${h}`);return s}
+function el(s,tag,a,txt){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;s.appendChild(e);return e}
+function axes(s,W,H,m,xd,yd,xl,yl,xt,yt){
+  const X=v=>m.l+(v-xd[0])/(xd[1]-xd[0])*(W-m.l-m.r), Y=v=>H-m.b-(v-yd[0])/(yd[1]-yd[0])*(H-m.t-m.b);
+  for(const t of yt){el(s,"line",{x1:m.l,x2:W-m.r,y1:Y(t),y2:Y(t),class:"grid"});el(s,"text",{x:m.l-6,y:Y(t)+3,"text-anchor":"end"},t)}
+  for(const t of xt){el(s,"text",{x:X(t),y:H-m.b+14,"text-anchor":"middle"},t)}
+  el(s,"line",{x1:m.l,x2:W-m.r,y1:H-m.b,y2:H-m.b,class:"ax"});el(s,"line",{x1:m.l,x2:m.l,y1:m.t,y2:H-m.b,class:"ax"});
+  el(s,"text",{x:W-m.r,y:H-4,"text-anchor":"end"},xl);el(s,"text",{x:m.l,y:m.t-6},yl);return [X,Y]}
+function line(s,pts,X,Y,a){el(s,"path",{d:pts.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1)).join(""),fill:"none",...a})}
+let SUM,SEEDS={},TRAIN={},cur=0;
+async function load(){
+  SUM=await (await fetch("results/summary.json")).json();
+  for(const s of SUM.seeds){SEEDS[s]=await (await fetch(`results/seed${s}.json`)).json();try{TRAIN[s]=await (await fetch(`results/train_seed${s}.json`)).json()}catch(e){}}
+  cur=SUM.seeds[0];const sb=$("seeds");
+  for(const s of SUM.seeds){const b=document.createElement("button");b.textContent=s;b.onclick=()=>{cur=s;draw()};sb.appendChild(b)}
+  const v=$("verdict");v.textContent=SUM.verdict;if(SUM.verdict!=="PASS")v.classList.add("fail");
+  const row=(ok,t)=>`<div><i>${ok?"✓":"✗"}</i>${t}</div>`, F=SUM.failure,Hh=SUM.hypothesis;
+  $("crit").innerHTML=row(!F.bound_violated,"bound held on every seed")+row(!F.ci_vs_better_includes_0,`CI vs ${SUM.better_baseline} excludes 0`)+row(!F.fixed_n_matches_at_leq_loops,"no fixed-N matches at ≤ loops");
+  $("hyp").innerHTML=row(Hh.h1_fhr_within_alpha_all_seeds,"FHR ≤ α")+row(Hh.h2a_gap_vs_fixed_ge_5pts,`+${(100*SUM.gap_vs["fixed-interp"][0]).toFixed(1)} pts vs fixed-N (≥5)`)+row(Hh.h2b_gap_vs_entropy_ge_3pts,`+${(100*SUM.gap_vs["entropy-matched"][0]).toFixed(1)} pts vs entropy (≥3)`);
+  draw()}
+function draw(){
+  document.querySelectorAll("#seeds button").forEach(b=>b.classList.toggle("on",+b.textContent===cur));
+  const R=SEEDS[cur],A=Object.fromEntries(R.arms.map(a=>[a.arm,a])),G=A.haltgate,N=R.nmax;
+  $("run").innerHTML=[["data",R.data],["nmax",N],["α / δ",R.alpha+" / "+R.delta],["λ*",G.lam==null?"none":f(G.lam,2)],["test items",G.loops_hist.reduce((a,b)=>a+b,0)],["hard set S",G.n_hard],["params",TRAIN[cur]?(TRAIN[cur].params/1e6).toFixed(2)+"M":"–"]].map(([k,v])=>`<div class="kv">${k}<b>${v}</b></div>`).join("");
+  $("k1").textContent=pct(G.acc);$("k1s").textContent=`fixed-${N} ${pct(A["fixed-"+N].acc)} · entropy ${pct(A["entropy-matched"].acc)}`;
+  $("k2").textContent=f(G.mean_loops,2)+" / "+N;$("k2s").textContent=`${pct(1-G.mean_loops/N)} of loops skipped`;
+  $("k3").textContent=pct(G.false_halt_rate);$("k3s").textContent=`bound α = ${pct(R.alpha)} w.p. ${1-R.delta}`;
+  const w=R.wall.ms_per_item;$("k4").textContent=f(w.haltgate,3)+" ms";$("k4s").textContent=`fixed-${N} ${f(w["fixed-"+N],3)} ms · ${R.wall.threads} threads`;
+  // pareto
+  {const W=640,H=270,m={l:42,r:12,t:16,b:26},s=svg(W,H),P=R.pareto,ys=[...P.haltgate,...P.entropy,...P.fixed].map(p=>p[1]);
+   const lo=Math.max(0,Math.floor(Math.min(...ys)*10)/10),yt=[];for(let t=lo;t<=1.0001;t+=0.1)yt.push(+t.toFixed(1));
+   const [X,Y]=axes(s,W,H,m,[1,N],[lo,1],"mean loops →","accuracy",[...Array(N).keys()].map(i=>i+1),yt);
+   line(s,P.entropy,X,Y,{stroke:"#666","stroke-width":1.5,"stroke-dasharray":"4 3"});line(s,P.haltgate,X,Y,{stroke:"#fff","stroke-width":1.8});
+   for(const p of P.fixed)el(s,"circle",{cx:X(p[0]),cy:Y(p[1]),r:4,fill:"#050505",stroke:"#e8e8e8"});
+   for(const [k,r,fill] of [["entropy-matched",4,"#777"],["random-matched",3.5,"#333"],["haltgate",5.5,"#fff"]]){const a=A[k];el(s,"circle",{cx:X(a.mean_loops),cy:Y(a.acc),r,fill,stroke:"#fff"});el(s,"text",{x:X(a.mean_loops)+8,y:Y(a.acc)+(k=="haltgate"?-8:12)},k)}
+   $("pareto").replaceChildren(s)}
+  // histogram
+  {const W=320,H=270,m={l:34,r:8,t:16,b:26},s=svg(W,H),g=G.loops_hist,e=A["entropy-matched"].loops_hist,mx=Math.max(...g,...e);
+   const [X,Y]=axes(s,W,H,m,[0.5,N+0.5],[0,mx],"loop","items",[...Array(N).keys()].map(i=>i+1),[0,Math.round(mx/2),mx]);const bw=(W-m.l-m.r)/N/2-3;
+   g.forEach((v,i)=>{el(s,"rect",{x:X(i+1)-bw-1,y:Y(v),width:bw,height:Y(0)-Y(v),fill:"#fff"});el(s,"rect",{x:X(i+1)+1,y:Y(e[i]),width:bw,height:Y(0)-Y(e[i]),fill:"#555"})});
+   $("hist").replaceChildren(s)}
+  // timeline
+  {const it=(SEEDS[SUM.seeds[0]].items||[]).slice(0,40),W=620,cw=(W-180)/N,rh=11,H=it.length*rh+24,s=svg(W,H);
+   for(let i=1;i<=N;i++)el(s,"text",{x:110+(i-.5)*cw,y:10,"text-anchor":"middle"},i);
+   it.forEach((d,r)=>{const y=16+r*rh;el(s,"text",{x:0,y:y+7.5},d.task+(d.hard?" ·S":""));
+     d.correct.forEach((c,i)=>{const run=i<d.halt;el(s,"rect",{x:110+i*cw+1,y,width:cw-2,height:rh-2,fill:c?(run?"#fff":"#3a3a3a"):"none",stroke:run?"#bbb":"#262626","stroke-width":.6})});
+     el(s,"line",{x1:110+d.halt*cw,x2:110+d.halt*cw,y1:y-1,y2:y+rh-1,stroke:"#fff","stroke-width":2});
+     el(s,"text",{x:118+N*cw,y:y+7.5},d.decision)});
+   $("timeline").replaceChildren(s)}
+  // scatter
+  {const P=SEEDS[SUM.seeds[0]].scatter||[],W=420,H=330,m={l:14,r:10,t:10,b:14},s=svg(W,H),xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);
+   const xd=[Math.min(...xs),Math.max(...xs)],yd=[Math.min(...ys),Math.max(...ys)],X=v=>m.l+(v-xd[0])/(xd[1]-xd[0])*(W-m.l-m.r),Y=v=>H-m.b-(v-yd[0])/(yd[1]-yd[0])*(H-m.t-m.b);
+   for(const L of [1,2,0])for(const p of P)if(p[2]===L)el(s,"circle",{cx:X(p[0]).toFixed(1),cy:Y(p[1]).toFixed(1),r:L===0?2.2:1.6,fill:L===0?"#fff":L===1?"#5a5a5a":"none",stroke:L===2?"#cfcfcf":"none","stroke-width":.7,opacity:L===1?.7:.95});
+   $("scatter").replaceChildren(s)}
+  // per-loop accuracy by task
+  {const W=320,H=210,m={l:34,r:10,t:16,b:26},s=svg(W,H),T=R.acc_loop_task,names=["parity","addition","copy"],sty=[{stroke:"#fff"},{stroke:"#999","stroke-dasharray":"5 3"},{stroke:"#555"}];
+   const [X,Y]=axes(s,W,H,m,[1,N],[0,1],"loop","acc",[1,2,4,N],[0,.5,1]);
+   names.forEach((n,k)=>{line(s,T.map((r,i)=>[i+1,r[k]]),X,Y,{...sty[k],"stroke-width":1.6,fill:"none"})});
+   $("byloop").replaceChildren(s);$("tasklegend").innerHTML=names.map((n,k)=>`<span class="${["w","g","o"][k]}">${n} ${pct(R.hard_frac_task[k])} in S</span>`).join("")}
+  // ltt path
+  {const W=320,H=210,m={l:34,r:10,t:16,b:26},s=svg(W,H),P=R.ltt_path;const [X,Y]=axes(s,W,H,m,[0,1],[0,1],"λ (stop threshold) ←","p",[0,.5,1],[0,.5,1]);
+   el(s,"line",{x1:X(0),x2:X(1),y1:Y(R.delta),y2:Y(R.delta),stroke:"#777","stroke-dasharray":"3 3"});el(s,"text",{x:X(1)-2,y:Y(R.delta)-4,"text-anchor":"end"},"δ = "+R.delta);
+   line(s,P.map(p=>[p.lam,p.p]),X,Y,{stroke:"#fff","stroke-width":1.6});if(G.lam!=null)el(s,"circle",{cx:X(G.lam),cy:Y(P.find(p=>p.lam===G.lam).p),r:4,fill:"#fff"});
+   $("ltt").replaceChildren(s)}
+  // training loss
+  {const L=(TRAIN[cur]||{}).loss||[],W=320,H=210,m={l:34,r:10,t:16,b:26},s=svg(W,H);if(L.length){const mx=Math.max(...L.map(p=>p[1])),st=L[L.length-1][0];
+   const [X,Y]=axes(s,W,H,m,[0,st],[0,mx],"step","loss",[0,Math.round(st/2),st],[0,+(mx/2).toFixed(1),+mx.toFixed(1)]);line(s,L,X,Y,{stroke:"#fff","stroke-width":1.2})}
+   $("train").replaceChildren(s)}
+  // arms table
+  $("arms").innerHTML=`<table><tr><th>arm</th><th>accuracy</th><th>mean loops</th><th>false-halt on S</th><th>parity</th><th>addition</th><th>copy</th><th>loops histogram 1…${N}</th></tr>`+
+   R.arms.map(a=>`<tr class="${a.arm==="haltgate"?"me":""}"><td>${a.arm}</td><td>${pct(a.acc)}</td><td>${f(a.mean_loops,2)}</td><td>${pct(a.false_halt_rate)}</td>${a.acc_task.map(v=>`<td>${pct(v)}</td>`).join("")}<td>${a.loops_hist.join(" ")}</td></tr>`).join("")+"</table>";
+  $("foot").textContent=`real run · ${R.data} toy tasks · ${R.scale} · seed ${cur} · summary pools ${SUM.n_test_items_pooled} test items over seeds ${SUM.seeds.join(", ")} · results/*.json`}
+load();
+</script>
+</body>
+</html>

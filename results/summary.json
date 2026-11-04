@@ -1,0 +1,138 @@
+{
+ "data": "SYNTH",
+ "scale": "small-scale toy (CPU)",
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "alpha": 0.05,
+ "delta": 0.1,
+ "n_test_items_pooled": 9000,
+ "table": [
+  {
+   "arm": "fixed-1",
+   "acc": 0.851111114025116,
+   "mean_loops": 1.0,
+   "false_halt_rate": 0.8203902045885721,
+   "acc_sd": 0.014053706137516329
+  },
+  {
+   "arm": "fixed-2",
+   "acc": 0.8893333474795023,
+   "mean_loops": 2.0,
+   "false_halt_rate": 0.42938655614852905,
+   "acc_sd": 0.014522011218832408
+  },
+  {
+   "arm": "fixed-3",
+   "acc": 0.8975555698076884,
+   "mean_loops": 3.0,
+   "false_halt_rate": 0.25378384192784625,
+   "acc_sd": 0.016459446087799756
+  },
+  {
+   "arm": "fixed-4",
+   "acc": 0.9043333133061727,
+   "mean_loops": 4.0,
+   "false_halt_rate": 0.1504914884765943,
+   "acc_sd": 0.019335253251141604
+  },
+  {
+   "arm": "fixed-5",
+   "acc": 0.9077777862548828,
+   "mean_loops": 5.0,
+   "false_halt_rate": 0.09835009401043256,
+   "acc_sd": 0.01998208287085528
+  },
+  {
+   "arm": "fixed-6",
+   "acc": 0.9078888893127441,
+   "mean_loops": 6.0,
+   "false_halt_rate": 0.05873246987660726,
+   "acc_sd": 0.0203930645465686
+  },
+  {
+   "arm": "fixed-7",
+   "acc": 0.9075555602709452,
+   "mean_loops": 7.0,
+   "false_halt_rate": 0.02803806960582733,
+   "acc_sd": 0.019596571568090547
+  },
+  {
+   "arm": "fixed-8",
+   "acc": 0.9077777663866679,
+   "mean_loops": 8.0,
+   "false_halt_rate": 0.0,
+   "acc_sd": 0.02063137750664985
+  },
+  {
+   "arm": "haltgate",
+   "acc": 0.905999998251597,
+   "mean_loops": 2.324333349863688,
+   "false_halt_rate": 0.03446795170505842,
+   "acc_sd": 0.02056067791199275
+  },
+  {
+   "arm": "entropy-matched",
+   "acc": 0.8937777678171793,
+   "mean_loops": 2.3205556074778237,
+   "false_halt_rate": 0.11927298704783122,
+   "acc_sd": 0.01826013633428171
+  },
+  {
+   "arm": "entropy-ltt",
+   "acc": 0.9019999901453654,
+   "mean_loops": 2.5397778352101645,
+   "false_halt_rate": 0.04389836949606737,
+   "acc_sd": 0.020871754895552864
+  },
+  {
+   "arm": "random-matched",
+   "acc": 0.8723888794581095,
+   "mean_loops": 2.324333349863688,
+   "false_halt_rate": 0.5735454161961874,
+   "acc_sd": 0.011968121958113857
+  }
+ ],
+ "haltgate_fhr_per_seed": [
+  0.017543859779834747,
+  0.03782505914568901,
+  0.04803493618965149
+ ],
+ "lam_per_seed": [
+  0.8799999952316284,
+  0.8999999761581421,
+  0.6800000071525574
+ ],
+ "gap_vs": {
+  "fixed-interp": [
+   0.01554692629724741,
+   0.009987212717533112,
+   0.02086980827152729
+  ],
+  "entropy-matched": [
+   0.012222222052514553,
+   0.009111111052334309,
+   0.015222222544252872
+  ],
+  "random-matched": [
+   0.03361111134290695,
+   0.028338193893432617,
+   0.03889458253979683
+  ]
+ },
+ "better_baseline": "entropy-matched",
+ "fixed_n_at_leq_loops_matching": [],
+ "failure": {
+  "bound_violated": false,
+  "ci_vs_better_includes_0": false,
+  "fixed_n_matches_at_leq_loops": false
+ },
+ "hypothesis": {
+  "h1_fhr_within_alpha_all_seeds": true,
+  "h2a_gap_vs_fixed_ge_5pts": false,
+  "h2b_gap_vs_entropy_ge_3pts": false
+ },
+ "verdict": "FAIL"
+}
